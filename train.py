@@ -479,6 +479,31 @@ def train(hyp, opt, device, tb_writer=None):
                 del ckpt
 
         # end epoch ----------------------------------------------------------------------------------------------------
+        #! initialize new dataloaders, with augmentations weights toned down
+        #! FEMTODET
+        if opt.multi_stage:
+            if epoch / epochs < 0.5 and epoch / epochs >= 0.25:
+                with open('data/hyp.scratch.tiny.stage.2.yaml') as f:
+                    hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
+                dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
+                                                    hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
+                                                    world_size=opt.world_size, workers=opt.workers,
+                                                    image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
+            elif epoch / epochs < 0.75 and epoch / epochs >= 0.5:
+                with open('data/hyp.scratch.tiny.stage.3.yaml') as f:
+                    hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
+                dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
+                                                    hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
+                                                    world_size=opt.world_size, workers=opt.workers,
+                                                    image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
+            elif epoch / epochs >= 0.75:
+                with open('data/hyp.scratch.tiny.stage.4.yaml') as f:
+                    hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
+                dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
+                                                    hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
+                                                    world_size=opt.world_size, workers=opt.workers,
+                                                    image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
+
     # end training
     if rank in [-1, 0]:
         # Plots
@@ -530,6 +555,7 @@ if __name__ == '__main__':
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
     parser.add_argument('--data', type=str, default='data/coco.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.p5.yaml', help='hyperparameters path')
+    parser.add_argument('--multi-stage', action='store_true', help='Use Multi Stage Dataset Configs')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
